@@ -348,13 +348,13 @@ def add_client_to_room(request, room_id, client_id, is_loopback):
         break
       room = memcache_client.gets(key)
 
+    occupancy = room.get_occupancy()
     if room.has_client(client_id):
       #error = constants.RESPONSE_DUPLICATE_CLIENT
       if occupancy == 1:
 	is_initiator = True
       #break
     else:
-      occupancy = room.get_occupancy()
       if occupancy >= 2:
 	error = constants.RESPONSE_ROOM_FULL
 	break
