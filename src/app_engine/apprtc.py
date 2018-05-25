@@ -502,7 +502,9 @@ class JoinPage(webapp2.RequestHandler):
     self.write_response('SUCCESS', params, messages)
 
   def post(self, room_id):
-    client_id = generate_random(8)
+    client_id = self.request.get('clientid')
+    if client_id is None:
+      client_id = generate_random(8)
     is_loopback = self.request.get('debug') == 'loopback'
     result = add_client_to_room(self.request, room_id, client_id, is_loopback)
     if result['error'] is not None:
