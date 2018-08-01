@@ -379,6 +379,10 @@ def add_client_to_room(request, room_id, client_id, is_loopback):
       #error = constants.RESPONSE_DUPLICATE_CLIENT
       if occupancy == 1:
 	is_initiator = True
+      else:
+	is_initiator = False
+	other_client = room.get_other_client(client_id)
+	messages = other_client.messages
       #break
     else:
       if occupancy >= 2:
@@ -395,7 +399,7 @@ def add_client_to_room(request, room_id, client_id, is_loopback):
 	other_client = room.get_other_client(client_id)
 	messages = other_client.messages
 	room.add_client(client_id, Client(is_initiator))
-	other_client.clear_messages()
+	#other_client.clear_messages()
 
     if memcache_client.cas(key, room, constants.ROOM_MEMCACHE_EXPIRATION_SEC):
       logging.info('Added client %s in room %s, retries = %d' \
