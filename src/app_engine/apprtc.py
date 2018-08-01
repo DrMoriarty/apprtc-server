@@ -375,24 +375,27 @@ def add_client_to_room(request, room_id, client_id, is_loopback):
       room = memcache_client.gets(key)
 
     occupancy = room.get_occupancy()
-    if occupancy >= 2:
-      error = constants.RESPONSE_ROOM_FULL
-      break
     if room.has_client(client_id):
-      error = constants.RESPONSE_DUPLICATE_CLIENT
-      break
-
-    if occupancy == 0:
-      is_initiator = True
-      room.add_client(client_id, Client(is_initiator))
-      if is_loopback:
-        room.add_client(constants.LOOPBACK_CLIENT_ID, Client(False))
+      #error = constants.RESPONSE_DUPLICATE_CLIENT
+      if occupancy == 1:
+	is_initiator = True
+      #break
     else:
-      is_initiator = False
-      other_client = room.get_other_client(client_id)
-      messages = other_client.messages
-      room.add_client(client_id, Client(is_initiator))
-      other_client.clear_messages()
+      if occupancy >= 2:
+	error = constants.RESPONSE_ROOM_FULL
+	break
+
+      if occupancy == 0:
+	is_initiator = True
+	room.add_client(client_id, Client(is_initiator))
+	if is_loopback:
+	  room.add_client(constants.LOOPBACK_CLIENT_ID, Client(False))
+      else:
+	is_initiator = False
+	other_client = room.get_other_client(client_id)
+	messages = other_client.messages
+	room.add_client(client_id, Client(is_initiator))
+	other_client.clear_messages()
 
     if memcache_client.cas(key, room, constants.ROOM_MEMCACHE_EXPIRATION_SEC):
       logging.info('Added client %s in room %s, retries = %d' \
@@ -528,7 +531,9 @@ class JoinPage(webapp2.RequestHandler):
     self.write_response('SUCCESS', params, messages)
 
   def post(self, room_id):
-    client_id = generate_random(8)
+    client_id = self.request.get('clientid')
+    if client_id is None:
+      client_id = generate_random(8)
     is_loopback = self.request.get('debug') == 'loopback'
     result = add_client_to_room(self.request, room_id, client_id, is_loopback)
     if result['error'] is not None:
